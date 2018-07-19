@@ -1,13 +1,8 @@
 package commands
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"os"
-
-	"github.com/astaxie/beego"
 	"github.com/holdskill/docsystem/conf"
 )
 
