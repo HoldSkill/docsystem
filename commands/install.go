@@ -110,7 +110,7 @@ func initialization() {
 		member.Password = "123456"
 		member.AuthMethod = "local"
 		member.Role = 0
-		member.Email = ""
+		member.Email = "admin@ekbon.cn"
 
 		if err := member.Add(); err != nil {
 			panic("Member.Add => " + err.Error())
