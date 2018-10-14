@@ -35,10 +35,10 @@ func init() {
 	beego.InsertFilter("/book", beego.BeforeRouter, FilterUser)
 	beego.InsertFilter("/book/*", beego.BeforeRouter, FilterUser)
 	beego.InsertFilter("/api/*", beego.BeforeRouter, FilterUser)
+	beego.InsertFilter("/manage/*", beego.BeforeRouter,FilterUser)
 
 	var FinishRouter = func(ctx *context.Context) {
-		ctx.ResponseWriter.Header().Add("Version", conf.VERSION)
-		ctx.ResponseWriter.Header().Add("Site", "")
+		ctx.ResponseWriter.Header().Add("DocSystem-Version", conf.VERSION)
 	}
 
 	beego.InsertFilter("/*", beego.BeforeRouter, FinishRouter, false)

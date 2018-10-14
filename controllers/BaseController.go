@@ -12,6 +12,8 @@ import (
 	"github.com/holdskill/docsystem/conf"
 	"github.com/holdskill/docsystem/models"
 	"github.com/holdskill/docsystem/utils"
+	"github.com/holdskill/docsystem/utils/filetil"
+	"path/filepath"
 )
 
 type BaseController struct {
@@ -30,7 +32,7 @@ type CookieRemember struct {
 
 // Prepare 预处理.
 func (c *BaseController) Prepare() {
-	c.Data["SiteName"] = "Doc"
+	c.Data["SiteName"] = "DocSystem"
 	c.Data["Member"] = models.NewMember()
 	controller, action := c.GetControllerAndAction()
 
@@ -56,9 +58,6 @@ func (c *BaseController) Prepare() {
 				}
 			}
 		}
-		//c.Member = models.NewMember()
-		//c.Member.Find(1)
-		//c.Data["Member"] = *c.Member
 	}
 	conf.BaseUrl = c.BaseUrl()
 	c.Data["BaseUrl"] = c.BaseUrl()
@@ -68,14 +67,14 @@ func (c *BaseController) Prepare() {
 		for _, item := range options {
 			c.Data[item.OptionName] = item.OptionValue
 			c.Option[item.OptionName] = item.OptionValue
-
-			if strings.EqualFold(item.OptionName, "ENABLE_ANONYMOUS") && item.OptionValue == "true" {
-				c.EnableAnonymous = true
-			}
-			if strings.EqualFold(item.OptionName, "ENABLE_DOCUMENT_HISTORY") && item.OptionValue == "true" {
-				c.EnableDocumentHistory = true
-			}
 		}
+		c.EnableAnonymous = strings.EqualFold(c.Option["ENABLE_ANONYMOUS"], "true")
+		c.EnableDocumentHistory = strings.EqualFold(c.Option["ENABLE_DOCUMENT_HISTORY"],"true")
+	}
+	c.Data["HighlightStyle"] = beego.AppConfig.DefaultString("highlight_style","github")
+
+	if filetil.FileExists(filepath.Join(beego.BConfig.WebConfig.ViewsPath,"widgets","scripts.tpl")) {
+		c.LayoutSections["Scripts"] = "widgets/scripts.tpl"
 	}
 }
 
@@ -157,6 +156,9 @@ func (c *BaseController) ShowErrorPage(errCode int, errMsg string) {
 	if err := beego.ExecuteViewPathTemplate(&buf, "errors/error.tpl", beego.BConfig.WebConfig.ViewsPath, map[string]interface{}{"ErrorMessage": errMsg, "ErrorCode": errCode, "BaseUrl": conf.BaseUrl}); err != nil {
 		c.Abort("500")
 	}
-
-	c.CustomAbort(200, buf.String())
+	if errCode >= 200 && errCode <= 510 {
+		c.CustomAbort(errCode, buf.String())
+	}else{
+		c.CustomAbort(500, buf.String())
+	}
 }

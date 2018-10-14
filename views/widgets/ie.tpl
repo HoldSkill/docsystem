@@ -13,7 +13,7 @@
                         <b class="text">chrome</b>
                     </span>
         </p>
-        <p class="from">提醒</p>
+        <p class="from">来自DocSystem的提醒</p>
         <b class="browsehappy-arrow"></b>
     </div>
 </div>

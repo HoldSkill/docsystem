@@ -1,7 +1,7 @@
 <div class="footer">
     <div class="container">
         <div class="row text-center border-top">
-            <span><a href="https://doc.ekbon.cn" target="_blank">易客邦</a></span>
+            <span><a href="https://doc.ekbon.cn" target="_blank">{{.SITE_NAME}}</a></span>
         </div>
         {{if ne .site_beian ""}}
         <div class="row text-center">

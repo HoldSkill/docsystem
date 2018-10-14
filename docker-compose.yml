@@ -1,37 +1,23 @@
-version: '2'
-
-services:
-
-### Applications Code Container #############################
-
-    applications:
-      image: tianon/true
-### Workspace Utilities Container ###########################
-
-    docsystem:
-      build:
-        context: ./
-      env_file: .env
-      environment:
-        - MYSQL_PORT_3306_TCP_ADDR=${MYSQL_PORT_3306_TCP_ADDR}
-        - MYSQL_PORT_3306_TCP_PORT=${MYSQL_PORT_3306_TCP_PORT}
-        - MYSQL_INSTANCE_NAME=${MYSQL_INSTANCE_NAME}
-        - MYSQL_USERNAME=${MYSQL_USERNAME}
-        - MYSQL_PASSWORD=${MYSQL_PASSWORD}
-        - HTTP_PORT=${HTTP_PORT}
-      ports:
-        - "${HTTP_PORT}:8181"
-      volumes_from:
-        - applications
-      tty: true
-      networks:
-        - backend
-
-
-### Networks Setup ############################################
-
-networks:
-  backend:
-    driver: "bridge"
-
-
+DocSystem_New:
+  image: registry.cn-hangzhou.aliyuncs.com/docsystem/docsystem:v0.13
+  privileged: false
+  restart: always
+  ports:
+    - 8181:8181
+  volumes:
+    - /var/www/docsystem/database:/docsystem/database
+    - /var/www/docsystem/uploads:/docsystem/uploads
+  environment:
+    - DOCSYSTEM_RUN_MODE=prod
+    - DOCSYSTEM_DB_ADAPTER=sqlite3
+    - DOCSYSTEM_DB_DATABASE=./database/docsystem.db
+    - DOCSYSTEM_CACHE=true
+    - DOCSYSTEM_CACHE_PROVIDER=file
+    - DOCSYSTEM_ENABLE_EXPORT=false
+    - DOCSYSTEM_BASE_URL=
+    - DOCSYSTEM_CDN_IMG_URL=
+    - DOCSYSTEM_CDN_CSS_URL=
+    - DOCSYSTEM_CDN_JS_URL=
+  dns:
+    - 223.5.5.5
+    - 223.6.6.6

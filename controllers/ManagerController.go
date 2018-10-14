@@ -19,6 +19,8 @@ import (
 	"github.com/holdskill/docsystem/utils/filetil"
 	"github.com/holdskill/docsystem/utils/pagination"
 	"gopkg.in/russross/blackfriday.v2"
+	"io/ioutil"
+	"os"
 )
 
 type ManagerController struct {
@@ -657,17 +659,19 @@ func (c *ManagerController) AttachDetailed() {
 //删除附件.
 func (c *ManagerController) AttachDelete() {
 	c.Prepare()
-	attach_id, _ := c.GetInt("attach_id")
+	attachId, _ := c.GetInt("attach_id")
 
-	if attach_id <= 0 {
+	if attachId <= 0 {
 		c.Abort("404")
 	}
-	attach, err := models.NewAttachment().Find(attach_id)
+	attach, err := models.NewAttachment().Find(attachId)
 
 	if err != nil {
 		beego.Error("AttachDelete => ", err)
 		c.JsonResult(6001, err.Error())
 	}
+	attach.FilePath = filepath.Join(conf.WorkingDirectory,attach.FilePath)
+
 	if err := attach.Delete(); err != nil {
 		beego.Error("AttachDelete => ", err)
 		c.JsonResult(6002, err.Error())
@@ -719,5 +723,42 @@ func (c *ManagerController) LabelDelete() {
 		c.JsonResult(50002, "删除失败:"+err.Error())
 	} else {
 		c.JsonResult(0, "ok")
+	}
+}
+
+func (c *ManagerController) Config() {
+	c.Prepare()
+	c.TplName = "manager/config.tpl"
+	if c.Ctx.Input.IsPost() {
+		content := strings.TrimSpace(c.GetString("configFileTextArea"))
+		if content == "" {
+			c.JsonResult(500,"配置文件不能为空")
+		}
+		tf,err := ioutil.TempFile(os.TempDir(),"docsystem")
+
+		if err != nil {
+			beego.Error("创建临时文件失败 ->",err)
+			c.JsonResult(5001,"创建临时文件失败")
+		}
+		defer tf.Close()
+
+		tf.WriteString(content)
+
+		err = beego.LoadAppConfig("ini",tf.Name())
+
+		if err != nil {
+			beego.Error("加载配置文件失败 ->",err)
+			c.JsonResult(5002,"加载配置文件失败")
+		}
+		err = filetil.CopyFile(tf.Name(), conf.ConfigurationFile)
+		if err != nil {
+			beego.Error("保存配置文件失败 ->",err)
+			c.JsonResult(5003,"保存配置文件失败")
+		}
+		c.JsonResult(0,"保存成功")
+	}
+	c.Data["ConfigContent"] = ""
+	if b,err := ioutil.ReadFile(conf.ConfigurationFile); err == nil {
+		c.Data["ConfigContent"] = string(b)
 	}
 }

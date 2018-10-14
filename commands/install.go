@@ -43,7 +43,7 @@ func ModifyPassword() {
 
 	//账号和密码需要解析参数后才能获取
 	if len(os.Args) >= 2 && os.Args[1] == "password" {
-		flagSet := flag.NewFlagSet("System command: ", flag.ExitOnError)
+		flagSet := flag.NewFlagSet("DocSystem command: ", flag.ExitOnError)
 
 		flagSet.StringVar(&account, "account", "", "用户账号.")
 		flagSet.StringVar(&password, "password", "", "用户密码.")
@@ -110,7 +110,7 @@ func initialization() {
 		member.Password = "123456"
 		member.AuthMethod = "local"
 		member.Role = 0
-		member.Email = "admin@iminho.me"
+		member.Email = ""
 
 		if err := member.Add(); err != nil {
 			panic("Member.Add => " + err.Error())
@@ -120,9 +120,9 @@ func initialization() {
 		book := models.NewBook()
 
 		book.MemberId = member.MemberId
-		book.BookName = "演示项目"
+		book.BookName = "DocSystem演示项目"
 		book.Status = 0
-		book.Description = "这是一个演示项目，该项目是由系统初始化时自动创建。"
+		book.Description = "这是一个DocSystem演示项目，该项目是由系统初始化时自动创建。"
 		book.CommentCount = 0
 		book.PrivatelyOwned = 0
 		book.CommentStatus = "closed"

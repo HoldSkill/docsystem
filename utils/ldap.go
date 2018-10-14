@@ -29,15 +29,15 @@ func ValidLDAPLogin(password string) (result bool, err error) {
 	}
 
 	defer lc.Close()
-	err = lc.Bind("cn=admin,dc=minho,dc=com", "123456")
+	err = lc.Bind("cn=admin,dc=ekbon,dc=cn", "123456")
 	if err != nil {
 		beego.Error("Bind => ", err)
 		return
 	}
 	searchRequest := ldap.NewSearchRequest(
-		"DC=minho,DC=com",
+		"DC=ekbon,DC=cn",
 		ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false,
-		fmt.Sprintf("(&(objectClass=User)(%s=%s))", "mail", "longfei6671@163.com"),
+		fmt.Sprintf("(&(objectClass=User)(%s=%s))", "mail", "202538815@qq.com"),
 		[]string{"dn"},
 		nil,
 	)
@@ -72,11 +72,11 @@ func AddMember(account, password string) error {
 	}
 
 	defer lc.Close()
-	user := fmt.Sprintf("cn=%s,dc=minho,dc=com", account)
+	user := fmt.Sprintf("cn=%s,dc=ekbon,dc=cn", account)
 
 	member := ldap.NewAddRequest(user)
 
-	member.Attribute("mail", []string{"longfei6671@163.com"})
+	member.Attribute("mail", []string{"202538815@qq.com"})
 
 	err = lc.Add(member)
 
@@ -107,7 +107,7 @@ func ModifyPassword(account, old_password, new_password string) error {
 	}
 	defer l.Close()
 
-	user := fmt.Sprintf("cn=%s,dc=minho,dc=com", account)
+	user := fmt.Sprintf("cn=%s,dc=ekbon,dc=cn", account)
 	err = l.Bind(user, old_password)
 	if err != nil {
 		beego.Error("Bind => ", err)

@@ -1,15 +1,47 @@
 package commands
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"os"
+
+	"github.com/astaxie/beego"
 	"github.com/holdskill/docsystem/conf"
 )
 
 //检查最新版本.
 func CheckUpdate() {
 
-	fmt.Println("System current version => ", conf.VERSION)
+	resp, err := http.Get("https://api.github.com/repos/holdskill/docsystem/tags")
+
+	if err != nil {
+		beego.Error("CheckUpdate => ", err)
+		os.Exit(1)
+	}
+
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		beego.Error("CheckUpdate => ", err)
+		os.Exit(1)
+	}
+
+	var result []*struct {
+		Name string `json:"name"`
+	}
+
+	err = json.Unmarshal(body, &result)
+	fmt.Println("DocSystem current version => ", conf.VERSION)
+	if err != nil {
+		beego.Error("CheckUpdate => ", err)
+		os.Exit(0)
+	}
+
+	if len(result) > 0 {
+		fmt.Println("DocSystem last version => ", result[0].Name)
+	}
 
 	os.Exit(0)
 

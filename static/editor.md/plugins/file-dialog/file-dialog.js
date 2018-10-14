@@ -1,13 +1,3 @@
-/*!
- * File (upload) dialog plugin for Editor.md
- *
- * @file        file-dialog.js
- * @author      minho
- * @version     0.1.0
- * @updateTime  2017-01-06
- * {@link       https://github.com/lifei6671/SmartWiki}
- * @license     MIT
- */
 
 (function() {
 

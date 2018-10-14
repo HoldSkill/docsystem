@@ -9,6 +9,7 @@ import (
 	"github.com/holdskill/docsystem/commands"
 	"github.com/holdskill/docsystem/conf"
 	"github.com/holdskill/docsystem/controllers"
+	"path/filepath"
 )
 
 type Daemon struct {
@@ -20,7 +21,7 @@ func NewDaemon() *Daemon {
 
 	config := &service.Config{
 		Name:             "docsystemd",                               //服务显示名称
-		DisplayName:      "System service",                        //服务名称
+		DisplayName:      "DocSystem service",                        //服务名称
 		Description:      "A document online management program.", //服务描述
 		WorkingDirectory: conf.WorkingDirectory,
 		Arguments:        os.Args[1:],
@@ -47,9 +48,17 @@ func (d *Daemon) Run() {
 
 	commands.RegisterFunction()
 
+	commands.RegisterAutoLoadConfig()
+
 	beego.ErrorController(&controllers.ErrorController{})
 
-	fmt.Printf("System version => %s\nbuild time => %s\nstart directory => %s\n%s\n", conf.VERSION, conf.BUILD_TIME, os.Args[0], conf.GO_VERSION)
+	f,err := filepath.Abs(os.Args[0])
+
+	if err != nil {
+		f = os.Args[0]
+	}
+
+	fmt.Printf("DocSystem version => %s\nbuild time => %s\nstart directory => %s\n%s\n", conf.VERSION, conf.BUILD_TIME, f, conf.GO_VERSION)
 
 	beego.Run()
 }

@@ -19,20 +19,22 @@ import (
 	_ "github.com/astaxie/beego/cache/redis"
 	"github.com/astaxie/beego/logs"
 	"github.com/astaxie/beego/orm"
-	"github.com/lifei6671/gocaptcha"
+	"github.com/holdskill/gocaptcha"
 	"github.com/holdskill/docsystem/cache"
-	"github.com/holdskill/docsystem/commands/migrate"
 	"github.com/holdskill/docsystem/conf"
 	"github.com/holdskill/docsystem/models"
 	"github.com/holdskill/docsystem/utils/filetil"
+	"github.com/astaxie/beego/cache/redis"
+	"github.com/howeyc/fsnotify"
 )
 
 // RegisterDataBase 注册数据库
 func RegisterDataBase() {
 	beego.Info("正在初始化数据库配置.")
 	adapter := beego.AppConfig.String("db_adapter")
+	orm.DefaultTimeLoc = time.Local
 
-	if adapter == "mysql" {
+	if strings.EqualFold(adapter, "mysql") {
 		host := beego.AppConfig.String("db_host")
 		database := beego.AppConfig.String("db_database")
 		username := beego.AppConfig.String("db_username")
@@ -43,7 +45,7 @@ func RegisterDataBase() {
 		if err == nil {
 			orm.DefaultTimeLoc = location
 		} else {
-			beego.Error("加载时区配置信息失败,请检查是否存在ZONEINFO环境变量:", err)
+			beego.Error("加载时区配置信息失败,请检查是否存在 ZONEINFO 环境变量->", err)
 		}
 
 		port := beego.AppConfig.String("db_port")
@@ -51,23 +53,31 @@ func RegisterDataBase() {
 		dataSource := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=true&loc=%s", username, password, host, port, database, url.QueryEscape(timezone))
 
 		if err := orm.RegisterDataBase("default", "mysql", dataSource); err != nil {
-			beego.Error("注册默认数据库失败:", err)
+			beego.Error("注册默认数据库失败->", err)
 			os.Exit(1)
 		}
-	} else if adapter == "sqlite3" {
-		orm.DefaultTimeLoc = time.UTC
+
+	} else if strings.EqualFold(adapter, "sqlite3") {
+
 		database := beego.AppConfig.String("db_database")
 		if strings.HasPrefix(database, "./") {
 			database = filepath.Join(conf.WorkingDirectory, string(database[1:]))
 		}
+		if p,err := filepath.Abs(database); err == nil {
+			database = p
+		}
 
 		dbPath := filepath.Dir(database)
-		os.MkdirAll(dbPath, 0777)
+
+		if _,err := os.Stat(dbPath); err != nil && os.IsNotExist(err) {
+			os.MkdirAll(dbPath, 0777)
+		}
+
 
 		err := orm.RegisterDataBase("default", "sqlite3", database)
 
 		if err != nil {
-			beego.Error("注册默认数据库失败:", err)
+			beego.Error("注册默认数据库失败->", err)
 		}
 	} else {
 		beego.Error("不支持的数据库类型.")
@@ -90,7 +100,12 @@ func RegisterModel() {
 		new(models.DocumentHistory),
 		new(models.Migration),
 		new(models.Label),
+		new(models.Blog),
+		new(models.Template),
 	)
+	gob.Register(models.Blog{})
+	gob.Register(models.Document{})
+	gob.Register(models.Template{})
 	//migrate.RegisterMigration()
 }
 
@@ -100,28 +115,74 @@ func RegisterLogger(log string) {
 	logs.SetLogFuncCall(true)
 	logs.SetLogger("console")
 	logs.EnableFuncCallDepth(true)
-	logs.Async()
 
-	logPath := filepath.Join(log, "log.log")
-
-	if _, err := os.Stat(logPath); os.IsNotExist(err) {
-
-		os.MkdirAll(log, 0777)
-
-		if f, err := os.Create(logPath); err == nil {
-			f.Close()
-			config := make(map[string]interface{}, 1)
-
-			config["filename"] = logPath
-
-			b, _ := json.Marshal(config)
-
-			beego.SetLogger("file", string(b))
+	if beego.AppConfig.DefaultBool("log_is_async", true) {
+		logs.Async(1e3)
+	}
+	if log == "" {
+		logPath,err := filepath.Abs(beego.AppConfig.DefaultString("log_path",conf.WorkingDir("runtime","logs")))
+		if err == nil {
+			log = logPath
+		}else{
+			log = conf.WorkingDir("runtime","logs")
 		}
 	}
 
+	logPath := filepath.Join(log, "log.log")
+
+	if _, err := os.Stat(log); os.IsNotExist(err) {
+		os.MkdirAll(log, 0777)
+	}
+
+	config := make(map[string]interface{}, 1)
+
+	config["filename"] = logPath
+	config["perm"] = "0755"
+	config["rotate"] = true
+
+	if maxLines := beego.AppConfig.DefaultInt("log_maxlines", 1000000); maxLines > 0 {
+		config["maxLines"] = maxLines
+	}
+	if maxSize := beego.AppConfig.DefaultInt("log_maxsize", 1<<28); maxSize > 0 {
+		config["maxsize"] = maxSize
+	}
+	if !beego.AppConfig.DefaultBool("log_daily", true) {
+		config["daily"] = false
+	}
+	if maxDays := beego.AppConfig.DefaultInt("log_maxdays", 7); maxDays > 0 {
+		config["maxdays"] = maxDays
+	}
+	if level := beego.AppConfig.DefaultString("log_level", "Trace"); level != "" {
+		switch level {
+		case "Emergency":
+			config["level"] = beego.LevelEmergency;break
+		case "Alert":
+			config["level"] = beego.LevelAlert;break
+		case "Critical":
+			config["level"] = beego.LevelCritical;break
+		case "Error":
+			config["level"] = beego.LevelError; break
+		case "Warning":
+			config["level"] = beego.LevelWarning; break
+		case "Notice":
+			config["level"] = beego.LevelNotice; break
+		case "Informational":
+			config["level"] = beego.LevelInformational;break
+		case "Debug":
+			config["level"] = beego.LevelDebug;break
+		}
+	}
+	b, err := json.Marshal(config);
+	if  err != nil {
+		beego.Error("初始化文件日志时出错 ->",err)
+		beego.SetLogger("file", `{"filename":"`+ logPath + `"}`)
+	}else{
+		beego.SetLogger(logs.AdapterFile, string(b))
+	}
+
+
+
 	beego.SetLogFuncCall(true)
-	beego.BeeLogger.Async()
 }
 
 // RunCommand 注册orm命令行工具
@@ -133,10 +194,8 @@ func RegisterCommand() {
 	} else if len(os.Args) >= 2 && os.Args[1] == "version" {
 		CheckUpdate()
 		os.Exit(0)
-	} else if len(os.Args) >= 2 && os.Args[1] == "migrate" {
-		ResolveCommand(os.Args[2:])
-		migrate.RunMigration()
 	}
+
 }
 
 //注册模板函数
@@ -181,10 +240,10 @@ func RegisterFunction() {
 
 //解析命令
 func ResolveCommand(args []string) {
-	flagSet := flag.NewFlagSet("System command: ", flag.ExitOnError)
-	flagSet.StringVar(&conf.ConfigurationFile, "config", "", "System configuration file.")
-	flagSet.StringVar(&conf.WorkingDirectory, "dir", "", "System working directory.")
-	flagSet.StringVar(&conf.LogFile, "log", "", "System log file path.")
+	flagSet := flag.NewFlagSet("DocSystem command: ", flag.ExitOnError)
+	flagSet.StringVar(&conf.ConfigurationFile, "config", "", "DocSystem configuration file.")
+	flagSet.StringVar(&conf.WorkingDirectory, "dir", "", "DocSystem working directory.")
+	flagSet.StringVar(&conf.LogFile, "log", "", "DocSystem log file path.")
 
 	flagSet.Parse(args)
 
@@ -193,9 +252,7 @@ func ResolveCommand(args []string) {
 			conf.WorkingDirectory = filepath.Dir(p)
 		}
 	}
-	if conf.LogFile == "" {
-		conf.LogFile = conf.WorkingDir("runtime","logs")
-	}
+
 	if conf.ConfigurationFile == "" {
 		conf.ConfigurationFile = conf.WorkingDir( "conf", "app.conf")
 		config := conf.WorkingDir("conf", "app.conf.example")
@@ -210,6 +267,16 @@ func ResolveCommand(args []string) {
 	if err := beego.LoadAppConfig("ini", conf.ConfigurationFile);err != nil {
 		log.Fatal("An error occurred:", err)
 	}
+	if conf.LogFile == "" {
+		logPath,err := filepath.Abs(beego.AppConfig.DefaultString("log_path",conf.WorkingDir("runtime","logs")))
+		if err == nil {
+			conf.LogFile = logPath
+		}else{
+			conf.LogFile = conf.WorkingDir("runtime","logs")
+		}
+	}
+
+	conf.AutoLoadDelay = beego.AppConfig.DefaultInt("config_auto_delay",0)
 	uploads := conf.WorkingDir("uploads")
 
 	os.MkdirAll(uploads, 0666)
@@ -239,6 +306,7 @@ func RegisterCache() {
 	isOpenCache := beego.AppConfig.DefaultBool("cache", false)
 	if !isOpenCache {
 		cache.Init(&cache.NullCache{})
+		return
 	}
 	beego.Info("正常初始化缓存配置.")
 	cacheProvider := beego.AppConfig.String("cache_provider")
@@ -272,6 +340,10 @@ func RegisterCache() {
 		beegoCache.DefaultEvery = cacheInterval
 		cache.Init(memory)
 	} else if cacheProvider == "redis" {
+		//设置Redis前缀
+		if key := beego.AppConfig.DefaultString("cache_redis_prefix",""); key != "" {
+			redis.DefaultKey = key
+		}
 		var redisConfig struct {
 			Conn     string `json:"conn"`
 			Password string `json:"password"`
@@ -308,13 +380,13 @@ func RegisterCache() {
 
 		bc, err := json.Marshal(&memcacheConfig)
 		if err != nil {
-			beego.Error("初始化Redis缓存失败:", err)
+			beego.Error("初始化 Memcache 缓存失败 ->", err)
 			os.Exit(1)
 		}
 		memcache, err := beegoCache.NewCache("memcache", string(bc))
 
 		if err != nil {
-			beego.Error("初始化Memcache缓存失败:", err)
+			beego.Error("初始化 Memcache 缓存失败 ->", err)
 			os.Exit(1)
 		}
 
@@ -322,10 +394,47 @@ func RegisterCache() {
 
 	} else {
 		cache.Init(&cache.NullCache{})
-		beego.Warn("不支持的缓存管道,缓存将禁用.")
+		beego.Warn("不支持的缓存管道,缓存将禁用 ->" ,cacheProvider)
 		return
 	}
 	beego.Info("缓存初始化完成.")
+}
+
+//自动加载配置文件.修改了监听端口号和数据库配置无法自动生效.
+func RegisterAutoLoadConfig()  {
+	if conf.AutoLoadDelay > 0 {
+
+		watcher, err := fsnotify.NewWatcher()
+
+		if err != nil {
+			beego.Error("创建配置文件监控器失败 ->",err)
+		}
+		go func() {
+			for {
+				select {
+				case ev := <-watcher.Event:
+					//如果是修改了配置文件
+					if ev.IsModify() {
+						if err := beego.LoadAppConfig("ini", conf.ConfigurationFile); err != nil {
+							beego.Error("An error occurred ->", err)
+							break
+						}
+						RegisterCache()
+						RegisterLogger("")
+						beego.Info("配置文件已加载 ->", conf.ConfigurationFile)
+					}
+				case err := <-watcher.Error:
+					beego.Error("配置文件监控器错误 ->", err)
+				}
+			}
+		}()
+
+		err = watcher.Watch(conf.ConfigurationFile)
+
+		if err != nil {
+			beego.Error("监控配置文件失败 ->",err)
+		}
+	}
 }
 
 func init() {
@@ -333,7 +442,7 @@ func init() {
 	if configPath, err := filepath.Abs(conf.ConfigurationFile); err == nil {
 		conf.ConfigurationFile = configPath
 	}
-	gocaptcha.ReadFonts("./static/fonts", ".ttf")
+	gocaptcha.ReadFonts(conf.WorkingDir("static","fonts"), ".ttf")
 	gob.Register(models.Member{})
 
 	if p, err := filepath.Abs(os.Args[0]); err == nil {

@@ -38,6 +38,8 @@ func init() {
 	beego.Router("/manager/label/list", &controllers.ManagerController{},"get:LabelList")
 	beego.Router("/manager/label/delete/:id", &controllers.ManagerController{},"post:LabelDelete")
 
+	beego.Router("/manager/config",  &controllers.ManagerController{}, "*:Config")
+
 	beego.Router("/setting", &controllers.SettingController{}, "*:Index")
 	beego.Router("/setting/password", &controllers.SettingController{}, "*:Password")
 	beego.Router("/setting/upload", &controllers.SettingController{}, "*:Upload")
@@ -62,6 +64,26 @@ func init() {
 	beego.Router("/book/setting/upload", &controllers.BookController{}, "post:UploadCover")
 	beego.Router("/book/setting/token", &controllers.BookController{}, "post:CreateToken")
 	beego.Router("/book/setting/delete", &controllers.BookController{}, "post:Delete")
+
+	//管理文章的路由
+	beego.Router("/manage/blogs", &controllers.BlogController{},"*:ManageList")
+	beego.Router("/manage/blogs/setting/?:id", &controllers.BlogController{}, "*:ManageSetting")
+	beego.Router("/manage/blogs/edit/?:id",&controllers.BlogController{}, "*:ManageEdit")
+	beego.Router("/manage/blogs/delete",&controllers.BlogController{}, "post:ManageDelete")
+	beego.Router("/manage/blogs/upload",&controllers.BlogController{}, "post:Upload")
+	beego.Router("/manage/blogs/attach/:id",&controllers.BlogController{}, "post:RemoveAttachment")
+
+
+	//读文章的路由
+	beego.Router("/blogs", &controllers.BlogController{}, "*:List")
+	beego.Router("/blog-attach/:id:int/:attach_id:int", &controllers.BlogController{},"get:Download")
+	beego.Router("/blog-:id([0-9]+).html",&controllers.BlogController{}, "*:Index")
+
+	//模板相关接口
+	beego.Router("/api/template/get", &controllers.TemplateController{},"get:Get")
+	beego.Router("/api/template/list", &controllers.TemplateController{},"post:List")
+	beego.Router("/api/template/add", &controllers.TemplateController{},"post:Add")
+	beego.Router("/api/template/remove", &controllers.TemplateController{},"post:Delete")
 
 	beego.Router("/api/attach/remove/", &controllers.DocumentController{}, "post:RemoveAttachment")
 	beego.Router("/api/:key/edit/?:id", &controllers.DocumentController{}, "*:Edit")

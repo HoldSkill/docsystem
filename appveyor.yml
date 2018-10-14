@@ -1,5 +1,5 @@
 version: "{build}"
-clone_folder: c:\gopath\src\github.com\lifei6671\docsystem
+clone_folder: c:\gopath\src\github.com\holdskill\docsystem
 
 environment:
   GOPATH: c:\gopath
@@ -48,7 +48,7 @@ build_script:
   - if [%tbs_tools%]==[mingw] if [%tbs_arch%]==[x64] SET PATH=C:\mingw64\bin;%PATH%
   - set CGO_ENABLED=1
   - for /f "delims=" %%i in ('go version') do (set GO_VERSION=%%i)
-  - cd c:\gopath\src\github.com\lifei6671\docsystem
+  - cd c:\gopath\src\github.com\holdskill\docsystem
   - dep ensure -v
   - go build -v -o "docsystem_windows_%GOARCH%.exe" -ldflags="-w -X github.com/holdskill/docsystem/conf.VERSION=%APPVEYOR_REPO_TAG_NAME% -X 'github.com/holdskill/docsystem/conf.BUILD_TIME=%date% %time%' -X 'conf.GO_VERSION=%GO_VERSION%'"
   - 7z a -t7z -r docsystem_windows_%GOARCH%.7z conf/*.conf* static/* docsystem_windows_%GOARCH%.exe views/* uploads/*
@@ -58,7 +58,7 @@ test_script:
 notifications:
   - provider: Email
     to:
-      - lifei6671@163.com
+      - holdskill@163.com
     on_build_success: false
 
 artifacts:

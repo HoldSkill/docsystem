@@ -2,16 +2,14 @@
 <html lang="zh-CN">
 <head>
 
-    <title>{{.Model.BookName}}</title>
+    <title>{{.Title}} </title>
 
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="renderer" content="webkit">
-    <meta name="author" content="Minho" />
-    <meta name="site" content="https://www.iminho.me" />
-    <meta name="keywords" content="{{.Model.BookName}}">
-    <meta name="description" content="{{.Model.Description}}">
+    <meta name="keywords" content="{{.Model.BookName}},{{.Title}}">
+    <meta name="description" content="{{.Title}}-{{if .Description}}{{.Description}}{{else}}{{.Model.Description}}{{end}}">
 
     <!-- Bootstrap -->
     <link href="{{cdncss "/static/bootstrap/css/bootstrap.min.css"}}" rel="stylesheet">
@@ -19,22 +17,17 @@
     <link href="{{cdncss "/static/jstree/3.3.4/themes/default/style.min.css"}}" rel="stylesheet">
     <link href="{{cdncss "/static/font-awesome/css/font-awesome.min.css"}}" rel="stylesheet">
     <link href="{{cdncss "/static/nprogress/nprogress.css"}}" rel="stylesheet">
-    <link href="{{cdncss "/static/css/kancloud.css"}}?_=1531286622" rel="stylesheet">
+    <link href="{{cdncss "/static/css/kancloud.css" "version"}}" rel="stylesheet">
     <link href="{{cdncss "/static/css/jstree.css"}}" rel="stylesheet">
-    <link href="{{cdncss "/static/editor.md/css/editormd.preview.css"}}" rel="stylesheet">
-    <link href="{{cdncss "/static/prettify/themes/prettify.css"}}" rel="stylesheet">
-    <link href="{{cdncss "/static/css/markdown.preview.css?_=1531286622"}}" rel="stylesheet">
-    <link href="{{cdncss "/static/highlight/styles/vs.css"}}" rel="stylesheet">
+    <link href="{{cdncss "/static/editor.md/lib/mermaid/mermaid.css" "version"}}" rel="stylesheet">
+    <link href="{{cdncss "/static/editor.md/lib/sequence/sequence-diagram-min.css" "version"}}" rel="stylesheet">
+    <link href="{{cdncss "/static/editor.md/css/editormd.preview.css" "version"}}" rel="stylesheet">
+    <link href="{{cdncss "/static/css/markdown.preview.css" "version"}}" rel="stylesheet">
+    <link href="{{cdncss (print "/static/editor.md/lib/highlight/styles/" .HighlightStyle ".css") "version"}}" rel="stylesheet">
     <link href="{{cdncss "/static/katex/katex.min.css"}}" rel="stylesheet">
-    <link href="{{cdncss "/static/css/print.css"}}" media="print" rel="stylesheet">
+    <link href="{{cdncss "/static/css/print.css" "version"}}" media="print" rel="stylesheet">
 
-    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
-    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
-
-    <!--[if lt IE 9]>
-    <script src="/static/html5shiv/3.7.3/html5shiv.min.js"></script>
-    <script src="/static/respond.js/1.4.2/respond.min.js"></script>
-    <![endif]-->
+    <script type="text/javascript">window.book={"identify":"{{.Model.Identify}}"};</script>
 </head>
 <body>
 <div class="m-manual manual-mode-view manual-reader">
@@ -129,6 +122,8 @@
                     </div>
                 </div>
             </div>
+            <div class="m-copyright">
+            </div>
         </div>
         <div class="manual-right">
             <div class="manual-article">
@@ -150,53 +145,6 @@
                     <div class="article-body  {{if eq .Model.Editor "markdown"}}markdown-body editormd-preview-container{{else}}editor-content{{end}}"  id="page-content">
                         {{.Content}}
                     </div>
-                    <!--
-                    {{/*
-                    {{if .Model.IsDisplayComment}}
-                    <div id="articleComment" class="m-comment">
-                        <div class="comment-result">
-                            <strong class="title">相关评论(<b class="comment-total">{{.Model.CommentCount}}</b>)</strong>
-                            <div class="comment-post">
-                                <form class="form" action="/comment/create" method="post">
-                                    <label class="enter w-textarea textarea-full">
-                                        <textarea class="textarea-input form-control" name="content" placeholder="文明上网，理性发言" style="height: 72px;"></textarea>
-                                        <input type="hidden" name="doc_id" value="118003">
-                                    </label>
-                                    <div class="util cf">
-                                        <div class="pull-left"><span style="font-size: 12px;color: #999"> 支持Markdown语法 </span></div>
-                                        <div class="pull-right">
-                                            <span class="form-tip w-fragment fragment-tip">Ctrl + Enter快速发布</span>
-                                            <label class="form-submit w-btn btn-success btn-m">
-                                                <button class="btn btn-success btn-sm" type="submit">发布</button>
-                                            </label>
-                                        </div>
-                                    </div>
-                                </form>
-                            </div>
-                            <div class="clearfix"></div>
-                            <div class="comment-list">
-                                <div class="comment-empty"><b class="text">暂无相关评论</b></div>
-                                <div class="comment-item" data-id="5841">
-                                    <p class="info"><a href="/@phptest" class="name">静夜思</a><span class="date">9月1日评论</span></p>
-                                    <div class="content">一直不明白，控制器分层和模型分层调用起来到底有什么区别</div>
-                                    <p class="util">
-                                        <span class="vote">
-                                            <a class="agree e-agree" href="javascript:;" data-id="5841" title="赞成">
-                                                <i class="fa fa-thumbs-o-up"></i></a><b class="count">4</b>
-                                            <a class="oppose e-oppose" href="javascript:;" data-id="5841" title="反对"><i class="fa fa-thumbs-o-down"></i></a>
-                                        </span>
-                                        <a class="reply e-reply" data-account="phptest">回复</a>
-                                        <span class="operate toggle">
-                                            <a class="delete e-delete" data-id="5841" data-href="/comment/delete"><i class="icon icon-cross"></i></a>
-                                            <span class="number">23#</span>
-                                        </span>
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    {{end}}
-*/}}-->
                     <div class="jump-top">
                         <a href="javascript:;" class="view-backtop"><i class="fa fa-arrow-up" aria-hidden="true"></i></a>
                     </div>
@@ -273,13 +221,11 @@
 <script src="{{cdnjs "/static/layer/layer.js"}}" type="text/javascript"></script>
 <script src="{{cdnjs "/static/jstree/3.3.4/jstree.min.js"}}" type="text/javascript"></script>
 <script src="{{cdnjs "/static/nprogress/nprogress.js"}}" type="text/javascript"></script>
-<script src="{{cdnjs "/static/highlight/highlight.js"}}" type="text/javascript"></script>
-<script src="{{cdnjs "/static/highlight/highlightjs-line-numbers.min.js"}}" type="text/javascript"></script>
+<script src="{{cdnjs "/static/editor.md/lib/highlight/highlight.js"}}" type="text/javascript"></script>
 <script src="{{cdnjs "/static/js/jquery.highlight.js"}}" type="text/javascript"></script>
-<script src="{{cdnjs "/static/js/kancloud.js"}}" type="text/javascript"></script>
-<script src="{{cdnjs "/static/js/splitbar.js"}}" type="text/javascript"></script>
+<script src="{{cdnjs "/static/js/kancloud.js" "version"}}" type="text/javascript"></script>
+<script src="{{cdnjs "/static/js/splitbar.js" "version"}}" type="text/javascript"></script>
 <script type="text/javascript">
-
 $(function () {
     $("#searchList").on("click","a",function () {
         var id = $(this).attr("data-id");
@@ -291,7 +237,7 @@ $(function () {
         });
     });
 });
-
 </script>
+{{.Scripts}}
 </body>
 </html>
