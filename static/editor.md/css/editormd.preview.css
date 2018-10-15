@@ -2791,6 +2791,7 @@
 .markdown-body dl,
 .markdown-body table,
 .markdown-body pre {
+  line-height: 2;
   margin-top: 0;
   margin-bottom: 16px;
 }
